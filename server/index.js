@@ -173,11 +173,13 @@ async function crawlKHops(startUrl, k) {
       for (const result of results) {
         if (result.status === 'fulfilled') {
           const { url, pageInfo } = result.value;
-          nodes.set(url, {
-            id: url,
-            title: pageInfo.title || url,
-            favicon: pageInfo.favicon
-          });
+          if (!nodes.has(url)) {
+            nodes.set(url, {
+              id: url,
+              title: pageInfo.title || url,
+              favicon: pageInfo.favicon
+            });
+          }
         }
       }
 
@@ -191,13 +193,15 @@ async function crawlKHops(startUrl, k) {
               try {
                 const normalizedLinkedUrl = new URL(linkedUrl).toString();
                 
-                // Add link regardless of whether we'll crawl the target
-                links.add(JSON.stringify({ 
-                  source: { id: url },
-                  target: { id: normalizedLinkedUrl }
-                }));
+                const linkId = JSON.stringify({ 
+                  source: url,
+                  target: normalizedLinkedUrl 
+                });
+                
+                if (!links.has(linkId)) {
+                  links.add(linkId);
+                }
 
-                // Only queue for crawling if we haven't seen it before
                 if (!urlCache.has(normalizedLinkedUrl)) {
                   queue.push({ 
                     url: normalizedLinkedUrl, 
@@ -218,21 +222,11 @@ async function crawlKHops(startUrl, k) {
     }
 
     const graphData = {
-      nodes: Array.from(nodes.values()).map(node => ({
-        ...node,
-        id: node.id,
-        x: undefined,
-        y: undefined,
-        vx: undefined,
-        vy: undefined
-      })),
+      nodes: Array.from(nodes.values()),
       links: Array.from(links)
         .map(link => {
           const { source, target } = JSON.parse(link);
-          return {
-            source: source.id,
-            target: target.id
-          };
+          return { source, target };
         })
         .filter(link => nodes.has(link.source) && nodes.has(link.target))
     };
