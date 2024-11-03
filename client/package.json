@@ -39,5 +39,8 @@
       "last 1 safari version"
     ]
   },
-  "homepage": "https://mb-v1.github.io/web-crawler-visualizer"
+  "homepage": "https://mb-v1.github.io/web-crawler-visualizer",
+  "devDependencies": {
+    "gh-pages": "^6.2.0"
+  }
 }

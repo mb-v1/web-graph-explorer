@@ -3,6 +3,8 @@ import { ForceGraph2D } from 'react-force-graph';
 import axios from 'axios';
 import './App.css';
 
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+
 function App() {
   const [url, setUrl] = useState('');
   const [k, setK] = useState(2);
@@ -13,8 +15,8 @@ function App() {
   const handleReset = () => {
     setGraphData({ nodes: [], links: [] });
     setError(null);
-    // Make a reset request to clear the server's URL cache
-    axios.post('http://localhost:3001/api/reset').catch(console.error);
+    // Update API URL
+    axios.post(`${API_URL}/api/reset`).catch(console.error);
   };
 
   const handleSubmit = async (e) => {
@@ -23,7 +25,8 @@ function App() {
     setError(null);
 
     try {
-      const response = await axios.post('http://localhost:3001/api/crawl', {
+      // Update API URL
+      const response = await axios.post(`${API_URL}/api/crawl`, {
         url,
         k,
         reset: false
