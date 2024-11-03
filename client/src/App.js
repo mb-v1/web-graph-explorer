@@ -25,13 +25,19 @@ function App() {
     setError(null);
 
     try {
-      // Update API URL
+      console.log('Sending request to:', `${API_URL}/api/crawl`);
       const response = await axios.post(`${API_URL}/api/crawl`, {
         url,
         k,
         reset: false
       });
       
+      console.log('Received response:', response.data);
+      
+      if (!response.data.nodes || !response.data.links) {
+        throw new Error('Invalid response format from server');
+      }
+
       // Create maps of existing nodes and links
       const existingNodes = new Map(graphData.nodes.map(node => [node.id, node]));
       const existingLinks = new Set(graphData.links.map(link => 
@@ -56,6 +62,10 @@ function App() {
         .filter(link => {
           const sourceId = typeof link.source === 'object' ? link.source.id : link.source;
           const targetId = typeof link.target === 'object' ? link.target.id : link.target;
+          if (!sourceId || !targetId) {
+            console.warn('Invalid link:', link);
+            return false;
+          }
           return existingNodes.has(sourceId) && existingNodes.has(targetId);
         })
         .map(link => ({
@@ -67,11 +77,13 @@ function App() {
           return !existingLinks.has(linkId);
         });
 
-      setGraphData({
+      const updatedGraphData = {
         nodes: Array.from(existingNodes.values()),
         links: [...graphData.links, ...newLinks]
-      });
-
+      };
+      
+      console.log('Setting graph data:', updatedGraphData);
+      setGraphData(updatedGraphData);
       setUrl('');
     } catch (error) {
       console.error('Error fetching graph data:', error);
@@ -133,14 +145,24 @@ function App() {
               if (node.favicon) {
                 const image = new Image();
                 image.src = node.favicon;
+                image.onerror = () => {
+                  // Draw fallback circle if favicon fails to load
+                  ctx.beginPath();
+                  ctx.arc(x, y, size/3, 0, 2 * Math.PI, false);
+                  ctx.fillStyle = '#999';
+                  ctx.fill();
+                  ctx.strokeStyle = '#666';
+                  ctx.stroke();
+                };
                 ctx.drawImage(image, x - size/2, y - size/2, size, size);
               } else {
-                // Default node appearance
+                // Default node appearance - make it more visible
                 ctx.beginPath();
-                ctx.arc(x, y, size/3, 0, 2 * Math.PI, false);
-                ctx.fillStyle = '#999';
+                ctx.arc(x, y, size/2.5, 0, 2 * Math.PI, false);
+                ctx.fillStyle = '#666';
                 ctx.fill();
-                ctx.strokeStyle = '#666';
+                ctx.strokeStyle = '#444';
+                ctx.lineWidth = 1.5;
                 ctx.stroke();
               }
 
